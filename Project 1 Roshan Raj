@@ -1,0 +1,254 @@
+# Roshan Raj
+# ICS 31
+# Project 1
+# 12th November 2023
+
+
+from project1_quotes import *
+import random
+
+
+# ------------------------------------------------------------
+# Movie Quotes Analysis Section
+
+
+# Quite self-explanatory: it checks if the parameter is a question or not
+# Returns True if it is a question and False if it's not
+def is_question(question_or_not):
+    if question_or_not[-1] == '?':
+        return True
+    else:
+        return False
+
+
+# Extracts the first part of a nested tuples list and outputs them as a list
+# For example, get_quotes is the parameter, then every first quote from the data will be outputted
+def get_first_quotes(input_first_quotes):
+    first_quotes = []
+    for quotes in input_first_quotes:
+        first_quotes.append(quotes[0])
+
+    return first_quotes
+
+
+# Does the same job was get_first_quotes, but instead it sorts out the questions and outputs only the
+# questions (ending with '?').
+def get_first_questions(input_first_questions):
+    first_quotes_questions = []
+    for quotes in input_first_questions:
+        if quotes[0][-1] == '?':
+            first_quotes_questions.append(quotes[0])
+
+    return first_quotes_questions
+
+
+# This function counts the data in the list of tuples which are questions
+#  For example, it just outputs the number of quotes that are question and not the quotes themselves
+def count_question_quotes(input_count):
+    i = 0
+    for quotes in input_count:
+
+        if quotes[0][-1] == '?':
+            i += 1
+
+    return i
+
+
+# Question 4). When print(count_question_quotes(get_quotes())) is used,
+# the real data has 71117 first quotes that are questions.
+
+
+# This function takes a data of list of tuples and then calculates the sum of the lengths of
+# the first tuples that are questions and then divides by the number of tuples that are questions
+# Hence, it gives us the average length of questions in the list of tuples which is used as parameter
+def get_average_question_length(input_length):
+    sum_of_inputs = 0
+    number_of_inputs = 0
+
+    for quotes in input_length:
+        if is_question(quotes[0]):
+            sum_of_inputs += len(quotes[0])
+            number_of_inputs += 1
+    average = sum_of_inputs / number_of_inputs
+
+    return average
+
+# ------------------------------------------------------------
+# Chatbot Section
+
+
+# This function helps in finding the similarity between quote data and input
+# matching_responses stores the list of matching responses from get_quotes and matches them with their similarity score
+def get_responses(quotes_list, string1):
+    matching_responses = []
+
+    for first_quote, second_quote in quotes_list:
+        similarity = get_similarity(first_quote, string1)
+
+        if similarity >= THRESH:
+            matching_responses.append((second_quote, similarity))
+
+    return matching_responses
+
+
+# It randomly selects an item from the list with probabilities
+# The variable response holds the randomly selected item from the list
+def get_random_from_list(random_list_input):
+    total_similarity = sum(item[1] for item in random_list_input)
+    rand_val = random.uniform(0, total_similarity)
+
+    # Initialize cumulative similarity
+    cumulative_similarity = 0
+
+    # Iterate through the list to find the selected response
+    for response, similarity in random_list_input:
+        cumulative_similarity += similarity
+
+        if cumulative_similarity >= rand_val:
+            # Returns the response related to the selected similarity
+
+            return response
+
+
+def respond(quotes_data, user_input):
+    # The basic function which responds to the input also specifying if the input is in the quotes
+    # data or not (responds with 'I don't know' if input isn't in data)
+    responses = get_responses(quotes_data, user_input)
+
+    if responses:
+        return get_random_from_list(responses)
+    else:
+        return "I don’t know."
+
+
+THRESH = 0.55
+# We can change the threshold value according to our preference experiment the code first
+# and then adjust the value between 0 and 1 according to the need of the user
+
+
+def get_similarity(string1, string2):
+    # Calculates the similarity between two strings based on the size of the intersection / size of union
+
+    words1 = set(string1.split())
+    words2 = set(string2.split())
+
+    intersection = len(words1.intersection(words2))
+    union = len(words1) + len(words2) - intersection
+
+    if union != 0:
+        similarity = intersection / union
+    else:
+        # If the union is zero, the similarity is set to zero to avoid division by zero.
+        similarity = 0
+
+    return similarity
+
+
+# Does the work of get_responses for version 1 of chatbot based on a similarity threshold.
+# The function calculates the similarity between the input string and each quote,
+# then filters responses with a similarity score greater than or equal to the threshold.
+def get_responses_v1(quotes_list, string1):
+    matching_responses = []
+
+    for first_quote, second_quote in quotes_list:
+        similarity = get_similarity(first_quote, string1)
+        matching_responses.append((second_quote, similarity))
+
+
+    # Check if there are any matching responses.
+    if matching_responses:
+        # Filter responses based on the similarity threshold.
+        filtered_responses = []
+
+        for response in matching_responses:
+            if response[1] >= THRESH:
+                filtered_responses.append(response)
+
+        return filtered_responses
+
+    else:
+        # Return an empty list if there are no matching responses.
+        return []
+
+
+def get_responses_v2(quotes_list, string1):
+    matching_responses = get_responses_v1(quotes_list, string1)
+
+    if matching_responses:
+        # Initialize variables
+        max_similarity = -1
+        max_similarity_response = None
+
+        # Iterate through matching responses to find the one with the highest similarity
+        for response, similarity in matching_responses:
+            if similarity > max_similarity:
+                max_similarity = similarity
+                max_similarity_response = response
+
+        # Returns a list containing the response with the highest similarity
+        return [max_similarity_response]
+
+    else:
+        # Return an empty list if there are no matching responses
+        return []
+
+
+def respond_v1(quotes_data, user_input):
+    # Gets responses from the version 1 ChatBot
+    responses = get_responses_v1(quotes_data, user_input)
+
+    if responses:
+        # Returns a random from a list of the potential responses
+        return get_random_from_list(responses)
+
+    else:
+        # Returns 'I don't know' if no matching responses
+        return "I don’t know."
+
+
+def respond_v2(quotes_data, user_input):
+    # Get responses using the Version 2 ChatBot
+    responses = get_responses_v2(quotes_data, user_input)
+
+    if responses:
+        # Selects a random response from the list of potential responses
+        selected_response = get_random_from_list(responses)
+        return selected_response
+
+    else:
+        # Return "I don't know" if there are no matching responses
+        return "I don’t know."
+
+
+# The main function which includes the intro to the chatbot and also mentions the input required
+# to stop the code from running.
+# Also includes the parameter of version which specifies the version (0, 1, 2) of the chatbot
+
+
+def chatbot(version):
+    print('Welcome!')
+    print("Ask me anything. When you're done, just type 'bye'")
+
+    while True:
+        # Ensures a loop till user enters 'bye'
+        input_2 = input()
+        input_1 = input_2.lower()
+
+        if input_1 == 'bye':
+            # If the user inputs 'bye', Chatbot ends the conversation,
+            break
+
+        if not input_1.endswith('?'):
+            # Checks if the input is a question
+            print("I only respond to questions!")    # If input isn't a question, Chatbot prompts the user.
+        else:
+            answer = respond(get_quotes(), input_1)
+            print(answer)        # Random output
+
+
+# Required to execute chatbot program for testing
+# Change according to the version of chatbot that the user wants to use
+
+
+if __name__ == '__main__':
+    chatbot(1)
